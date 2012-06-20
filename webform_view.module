@@ -111,13 +111,21 @@ function webform_view_field_formatter_view($entity_type, $entity, $field, $insta
   switch ($display['type']) {
     case 'webform_view_placeholder':
       foreach ($items as $delta => $item) {
-
-        if (!empty($item)) {
+        // Don't even insert the placeholder if there is no value in the trigger
+        // element.
+        if (!empty($item['value'])) {
           $key = $entity_type == 'node' ? $entity->nid : $entity->id;
           $replace_pattern = "[webform_view_" . $key . "_placeholder]";
           $element[$delta] = array(
             '#type' => 'markup',
             '#markup' => $replace_pattern,
+          );
+        }
+        else {
+          // Cannot order, return empty string.
+          $element[$delta] = array(
+            '#type' => 'markup',
+            '#markup' => '',
           );
         }
       }
