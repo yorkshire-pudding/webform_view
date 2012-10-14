@@ -1,5 +1,8 @@
 name = Webform View
 description = Allow webform submissions to have views embedded
 core = 7.x
-package = "Sparks Interactive"
+dependencies[] = webform
+dependencies[] = views
+
+package = "Webform"
 
