@@ -23,6 +23,7 @@ function _webform_defaults_view() {
     'value' => '',
     'extra' => array(
       'view' => '',
+      'filter_field_id' => 'quantity',
       'description' => '',
       'private' => FALSE,
     ),
@@ -38,17 +39,46 @@ function _webform_defaults_view() {
  */
 function _webform_edit_view($component) {
   $form = array();
+  $form['webform_view'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Webform View'),
+  );
 
   $options = _webform_view_options();
 
-  $form['view'] = array(
+  $form['webform_view']['view'] = array(
     '#type' => 'select',
     '#title' => t('View'),
     '#options' => $options,
     '#parents' => array('extra', 'view'),
     '#default_value' => $component['extra']['view'],
-    '#description' => t("Choose an existing view that will be embedded in the webform. Each row of this view will be displays and selections made there will become form fields that will be submitted as part of this form."),
+    '#description' => t("Choose an existing view that will be embedded in the webform. Each row of this view will be displayed and selections made there will become form fields that will be submitted as part of this form."),
   );
+  
+  // Need to expose an option to the editor to choose
+  // which of the sub-fields is the trigger or 'quantity' one.
+  // If the 'quantity' field is blank, the data for that row
+  // is not serialized at all. But the user should not be locked down to 
+  // 'quantity' as the magic keyword. So we have to expose it instead.
+  
+  // To enumerate the subfields, need to look at the current webform proper.
+  $webform_node = node_load($component['nid']);
+  $subfields = array();
+  $subfields['<none>'] = '<none>';
+  foreach ($webform_node->webform['components'] as $field) {
+    if ($field['pid'] == $component['cid']) {
+      $subfields[$field['form_key']] = $field['form_key'];
+    }  
+  }
+  $form['webform_view']['filter_field_id'] = array(
+    '#type' => 'select',
+    '#title' => t('Required field (in rows)'),
+    '#options' => $subfields,
+    '#parents' => array('extra', 'filter_field_id'),
+    '#default_value' => $component['extra']['filter_field_id'],
+    '#description' => t("Rows where this field is blank will be excluded from results, eg set it to the 'quantity' field to discard info when 'quantity' is zero, or set it to the 'yes' field to ignore submissions where the answer is 'no'. This prevents reports from filling up with dozens of lines with 'quantity:0' next to them. If you choose '&lt;none&gt;', then all rows will always be submitted, without any clean-up."),
+  );
+  
   return $form;
 }
 
@@ -246,13 +276,13 @@ function _webform_submit_view($component, $value) {
   //   51 => array('item' => 'the node title', 'quantity' => 2)
   //  )
 
-
-  // Can clear out blank values here
-  $quantity_key = 'quantity';
+  // Can clear out blank values here.
+  $required_key = $component['extra']['filter_field_id']; // eg 'quantity';
+  // If this key is set, then rows without it are skipped
   $return = array();
   foreach ($value as $key => $row) {
     if (is_array($row)) {
-      if (!empty($row[$quantity_key])) {
+      if (($required_key == '<none>') || !empty($row[$required_key])) {
         $return[$key] = $row;
       }
     }
@@ -262,9 +292,7 @@ function _webform_submit_view($component, $value) {
   // have to hide our data in serialized form. Dull, but the only way to be
   // safe it seems.
 
-  #dpm(get_defined_vars());
   return serialize($return);
-
 }
 
 /**
@@ -341,7 +369,8 @@ function theme_webform_display_view($variables) {
   $element = $variables['element'];
   // Theme the order like a table.
   if ($element['#format'] == 'html') {
-    $header = array_keys(reset($element['#value']));
+    $first_row = reset($element['#value']);
+    $header = $first_row ? array_keys($first_row) : array();
     return theme('table', array('header' => $header, 'rows' => $element['#value']));
   }
   // Plaintext equivalent.
