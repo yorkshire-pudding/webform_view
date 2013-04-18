@@ -66,7 +66,7 @@ function _webform_edit_view($component) {
   $subfields = array();
   $subfields['<none>'] = '<none>';
   foreach ($webform_node->webform['components'] as $field) {
-    if ($field['pid'] == $component['cid']) {
+    if (isset($component['cid']) && $field['pid'] == $component['cid']) {
       $subfields[$field['form_key']] = $field['form_key'];
     }  
   }
