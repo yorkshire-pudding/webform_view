@@ -178,6 +178,22 @@ function _webform_render_view($component, $value_serialized = NULL, $filter = TR
 
     // Each component that is defined as a child of this view component
     // gets replicated.
+    if (empty($component['children'])) {
+      watchdog('webform_view', '
+        The embedded webform component "!component" in "!webform" has no 
+        "child" elements defined. 
+        If you want the webform to submit data, please create a webform 
+        field element and nest it beneath the embedded view.
+        ...And then configure the view to expose this field in its layout.
+        ', 
+        array(
+          '!component' => l($component['name'], '/node/' . $node->nid . '/webform/components/' . $component['cid'] ), 
+          '!webform' => l($node->title, '/node/' . $node->nid . '/webform/components/')
+        ), WATCHDOG_NOTICE 
+      );
+      $component['children'] = array();
+    }
+    
     foreach ($component['children'] as $webform_component) {
 
       // Some webform welements are not native. @see webform_element_info
