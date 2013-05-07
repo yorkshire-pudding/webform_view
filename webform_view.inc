@@ -194,7 +194,7 @@ function _webform_render_view($component, $value_serialized = NULL, $filter = TR
       $component['children'] = array();
     }
 
-    foreach ($component['children'] as $webform_component) {
+    foreach ((array)$component['children'] as $webform_component) {
 
       // Some webform welements are not native. @see webform_element_info
       $type = $webform_component['type'];
