@@ -54,13 +54,13 @@ function _webform_edit_view($component) {
     '#default_value' => $component['extra']['view'],
     '#description' => t("Choose an existing view that will be embedded in the webform. Each row of this view will be displayed and selections made there will become form fields that will be submitted as part of this form."),
   );
-  
+
   // Need to expose an option to the editor to choose
   // which of the sub-fields is the trigger or 'quantity' one.
   // If the 'quantity' field is blank, the data for that row
-  // is not serialized at all. But the user should not be locked down to 
+  // is not serialized at all. But the user should not be locked down to
   // 'quantity' as the magic keyword. So we have to expose it instead.
-  
+
   // To enumerate the subfields, need to look at the current webform proper.
   $webform_node = node_load($component['nid']);
   $subfields = array();
@@ -68,7 +68,7 @@ function _webform_edit_view($component) {
   foreach ($webform_node->webform['components'] as $field) {
     if (isset($component['cid']) && $field['pid'] == $component['cid']) {
       $subfields[$field['form_key']] = $field['form_key'];
-    }  
+    }
   }
   $form['webform_view']['filter_field_id'] = array(
     '#type' => 'select',
@@ -78,7 +78,7 @@ function _webform_edit_view($component) {
     '#default_value' => $component['extra']['filter_field_id'],
     '#description' => t("Rows where this field is blank will be excluded from results, eg set it to the 'quantity' field to discard info when 'quantity' is zero, or set it to the 'yes' field to ignore submissions where the answer is 'no'. This prevents reports from filling up with dozens of lines with 'quantity:0' next to them. If you choose '&lt;none&gt;', then all rows will always be submitted, without any clean-up."),
   );
-  
+
   return $form;
 }
 
@@ -152,7 +152,7 @@ function _webform_render_view($component, $value_serialized = NULL, $filter = TR
   foreach ($view->result as $index => $row) {
 
     // Key on the real row ID if possible
-    $key = isset($row->nid) ? $row->nid : $index;
+    $key = isset($row->{$view->base_field}) ? $row->{$view->base_field} : $index;
 
     // If reviewing or editing fields, the $value array may be available.
     // It's our job to put it back into the element.
@@ -180,20 +180,20 @@ function _webform_render_view($component, $value_serialized = NULL, $filter = TR
     // gets replicated.
     if (empty($component['children'])) {
       watchdog('webform_view', '
-        The embedded webform component "!component" in "!webform" has no 
-        "child" elements defined. 
-        If you want the webform to submit data, please create a webform 
+        The embedded webform component "!component" in "!webform" has no
+        "child" elements defined.
+        If you want the webform to submit data, please create a webform
         field element and nest it beneath the embedded view.
         ...And then configure the view to expose this field in its layout.
-        ', 
+        ',
         array(
-          '!component' => l($component['name'], '/node/' . $node->nid . '/webform/components/' . $component['cid'] ), 
+          '!component' => l($component['name'], '/node/' . $node->nid . '/webform/components/' . $component['cid'] ),
           '!webform' => l($node->title, '/node/' . $node->nid . '/webform/components/')
-        ), WATCHDOG_NOTICE 
+        ), WATCHDOG_NOTICE
       );
       $component['children'] = array();
     }
-    
+
     foreach ($component['children'] as $webform_component) {
 
       // Some webform welements are not native. @see webform_element_info
