@@ -407,8 +407,13 @@ function theme_webform_display_view($variables) {
 function array_to_plaintext_table($rows) {
   $cols = array();
   // Count the col widths first.
-  foreach ($rows as $row) {
+  foreach ($rows as $delta => $row) {
     foreach ($row as $col => $cell) {
+      // Some fields may be multiple (checkbox options) so arrive as arrays.
+      if (is_array($cell)) {
+        $cell = implode(', ', $cell);
+        $rows[$delta][$col] = $cell;
+      }
       $cols[$col] = max(@$cols[$col], strlen($cell), strlen($col));
     }
   }
