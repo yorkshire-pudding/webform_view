@@ -59,6 +59,24 @@ function webform_view_theme() {
   );
 }
 
+/**
+ * Return help text describing this module
+ *
+ * @param $section string Context this help is being called from
+ * @return string
+ */
+function webform_view_help($path, $arg) {
+  $modulename = 'webform_view';
+  switch ($path) {
+    case 'admin/help#' . $modulename:
+      $help_dir = drupal_get_path('module', $modulename) . '/help';
+      $text = file_get_contents("$help_dir/index.html");
+      $text = preg_replace('/(src|href)="([^\\/][^"]+)"/', '$1="' . url($help_dir) . '/$2"', $text);
+      return $text;
+  }
+  return FALSE;
+}
+
 
 /**
  * hook_form_alter()

@@ -16,7 +16,7 @@
 		Due to a change in webform added in function webform_client_form_pages() http://drupalcode.org/project/webform.git/commitdiff/7bc797adb3ff27f8dc33545b41d79e902394b547
 		the order of processing was reversed and webform 4.x is incompatible with webform_view.
 		this cannot be cleanly fixed yet!
-	<h3>Desired workflow:</h3>
+	<h2>Desired workflow:</h2>
 	<ul>
 		<li>A website administrator can publish information about
 			resources (pamphlets, publications) or even products or topics as
@@ -29,7 +29,7 @@
 			are registered. Data on the submissions is managed using the Webform
 			UI controls.</li>
 	</ul>
-	<h3>Execution:</h3>
+	<h2>Execution:</h2>
 	<p>Was hard. Webform doesn&#39;t natively support
 		multiple/unlimited selections very well, and doesn&#39;t like the
 		available options being dynamic very well. Although with recent
@@ -42,13 +42,13 @@
 		there are now several moving parts that have to be configured, this
 		was engineered to produce the desired result in a highly re-usable and
 		configurable way.</p>
-	<h3>Usage (overview):</h3>
+	<h2>Usage (overview):</h2>
 	<ul>
 		<li>Create your resource content type. </li>
 		<li>This content type should include an extra &quot;can
 			order&quot; sort of field, which may be used to indicate where the
-			per-row&nbsp;webform elements get inserted in displays. This is an
-			additional field &#39;render mode&#39; called &quot;webform
+			per-row webform elements get inserted in displays. This is an
+			additional field &quot;render mode&quot; called &quot;webform
 			placeholder&quot; that will be available for some content fields
 			Create it as a type:"Boolean" widget:"single on/off checkbox" field.
 			Set its default value to TRUE. 
@@ -64,33 +64,33 @@
 		<li>Create a webform that users can use to order resources. This
 			should contain contact details etc as needed.</li>
 		<li>Embed the view into the webform (new functionality). This is
-			done using a new webform element &#39;Embedded view&quot;.</li>
+			done using a new webform element &quot;Embedded view&quot;.</li>
 		<li>Add additional webform fields as children of the view element
 		  (as if it were a fieldset). 
 		  These	fields will be propogated to create <em>new webform fields for
 				each item in the view</em>.
 		</li>
 		<li>Go back and edit the view display to configure where these
-			webform fields (the &quot;webform placeholder&quot;)&nbsp;should be
+			webform fields (the &quot;webform placeholder&quot;) should be
 			placed in the display of the view. This gives you maximum layout
 			control in how your final form will look.</li>
 	</ul>
 	<p>At this point, using the webform should merge all functions
 		together. Viewing the webform should display the view, and include
 		form fields in the layout location of the &quot;webform
-		placeholder&quot;.&nbsp;Submissions to this webform should save the
+		placeholder&quot;. Submissions to this webform should save the
 		values for each item in the view. Generated emails should list each
 		selection.</p>
-	<h3>Usage (full setup instructions):</h3>
+	<h2>Usage (full setup instructions):</h2>
 	<ol>
 		<li>
-			<h4>Download/enable required modules.</h4>
+			<h3>Download/enable required modules.</h3>
 			<ul>
-				<li><a href="http://drupal.org/project/webform">webform</a></li>
-				<li><a href="http://drupal.org/project/views">views</a></li>
+				<li><a href="http://drupal.org/project/webform">Webform</a></li>
+				<li><a href="http://drupal.org/project/views">Views</a></li>
 				<li>Field UI (core)</li>
 				<li>Options, and List (core) - for the checkbox</li>
-				<li><a href="http://drupal.org/node/1638192">webform_view</a></li>
+				<li><a href="http://drupal.org/node/1638192">Webform View</a></li>
 			</ul>
 			<p>Though not required, for this demo I&#39;ll also use</p>
 			<ul>
@@ -99,20 +99,23 @@
 			</ul>
 		</li>
 		<li>
-			<h4>Create a &quot;resource&quot; content type.</h4> <img alt=""
+			<h3>Create a &quot;resource&quot; content type.</h3> <img alt=""
 			src="images/webform_view-resource_content_type.jpg"
 			style="width: 500px;" />
-			<h5>Add some basic fields, eg file and image.</h5>
-			<h5>Add our marker field. &quot;Can order&quot; as a Boolean
-				checkbox.</h5>
+			<h4>Add some basic fields, eg file and image.</h4>
+			<h4>Add our marker field. &quot;Can order&quot; as a Boolean
+				checkbox.</h4>
 			<p>
+      Under "Field Settings", set "On Value" to "Can Order"
+         and "Off Value" to "Cannot Order". 
+        Then set the default value to "Can Order".
 				<img alt=""
 					src="images/webform_view-resource_content_type_fields.jpg"
 					style="width: 500px;" />
 			</p>
 		</li>
 		<li>
-			<h3>Add some sample resources.</h3>
+			<h2>Add some sample resources.</h2>
 			<p>For variety, I&#39;ll show one that is available in
 				hardcopy-only, one that is download-only, and one that is both. This
 				is enabled by our &quot;can order&quot; checkbox field.</p> <img alt=""
@@ -120,7 +123,7 @@
 			style="width: 466px; height: 128px;" />
 		</li>
 		<li>
-			<h3>Create a view that shows these items.</h3>
+			<h2>Create a view that shows these items.</h2>
 			<p>
 				Just a view that filters on type:resource will do here. I&#39;ll use
 				a table+fields view display for now, though I&#39;d recommend using
@@ -138,7 +141,7 @@
 			</p>
 		</li>
 		<li>
-			<h3>Create the webform.</h3>
+			<h2>Create the webform.</h2>
 			<p>
 				Add whatever normal fields you need in the webform for submission as
 				usual.<br /> <img alt=""
@@ -147,7 +150,7 @@
 			</p>
 		</li>
 		<li>
-			<h3>Insert the view into the webform.</h3>
+			<h2>Insert the view into the webform.</h2>
 			<p>Here use the new webfrom view webform component &quot;Embedded
 				view&quot;. I&#39;ll call it&nbsp;&quot;Order&quot;</p>
 			<p>In the options for this field you should choose the
@@ -156,7 +159,7 @@
 			src="images/webform_view-edit_component.jpg" style="width: 500px;" />
 		</li>
 		<li>
-			<h3>Add webform fields as child elements to our embedded view.</h3>
+			<h2>Add webform fields as child elements to our embedded view.</h2>
 			<p>
 				These fields will need to record at least<br /> A: the item name,<br />
 				B: the request submitted with this form.
@@ -184,7 +187,7 @@
 			</p>
 		</li>
 		<li>
-			<h3>Get the item description into the webform fields.</h3>
+			<h2>Get the item description into the webform fields.</h2>
 			<p>Sorry, This is one extra fiddly step, used to ensure that the
 				text in the submission&nbsp;results names the selected item
 				appropriately.</p>
@@ -218,7 +221,7 @@
 			</blockquote>
 		</li>
 		<li>
-			<h3>Conceptual re-cap</h3>
+			<h2>Conceptual re-cap</h2>
 			<p>
 				These fields, which we have defined using the webform UI, need to be
 				displayed as part of a view, which is in turn being pulled in and
@@ -230,7 +233,7 @@
 			</p>
 		</li>
 		<li>
-			<h4>Here is how that works.</h4>
+			<h3>Here is how that works.</h3>
 			<ol>
 				<li>Configure the <em>view</em> to <em>embed webform
 						components</em>.
@@ -244,9 +247,12 @@
 					webform_view, and marks where the new fields will be displayed.<br />
 					Your view preview should now look like this:<br /> <img alt=""
 					src="images/webform_view-with_placeholder_fields.jpg"
-					style="width: 500px;" /><br /> HOWEVER, when that view is
+					style="width: 500px;" /><br /> 
+          You will not see the complete webform in the Views UI preview - 
+          it will just show the placeholders.
+          HOWEVER, when that view is
 					embedded in a webform (as configured earlier) those placeholders
-					should be displayed as:<br /> <img alt=""
+					should now be displayed as form fields:<br /> <img alt=""
 					src="images/webform_view-final_form.jpg" style="width: 500px;" /><br />
 					And we have WON!<br /> &nbsp;
 				</li>

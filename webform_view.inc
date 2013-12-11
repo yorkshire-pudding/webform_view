@@ -159,10 +159,15 @@ function _webform_render_view($component, $value_serialized = NULL, $filter = TR
     $component_value = isset($value[$key]) ? $value[$key] : array();
     // This is now an array representing the data last stored in this row.
 
-    // One of these fields should probably be a textfield that can hold the item identifier
+    // One of these fields should probably be a textfield that can hold the
+    // item identifier
     // Should use tokens to prefill it. Would be good.
     // For now, just steal values direct from the row result.
-    // A token like [node_title] will pull the id from a view - as long as the view row has that data
+    // A token like [node_title] will pull the id from a view -
+    // as long as the view row has that data.
+    // I can't expose to the user what those machine names are however...
+    // https://drupal.org/node/2099751
+    // They just have to guess.
     $tokens = array();
     foreach ($row as $token_key => $token_val) {
       if (is_string($token_val)) {
