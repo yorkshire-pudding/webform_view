@@ -131,6 +131,7 @@ function _webform_render_view($component, $value_serialized = NULL, $filter = TR
   $node = isset($component['nid']) ? node_load($component['nid']) : NULL;
   $view_key = $component['extra']['view'];
   $args = explode('/', $component['extra']['contextual_filters']);
+  $args = array_filter($args);
 
   $placeholder_fields = array();
 
@@ -155,7 +156,8 @@ function _webform_render_view($component, $value_serialized = NULL, $filter = TR
   // execute_display produces cooked text.
   // It can include a placeholder string for our form elements,
   // if a field chooses to use the 'webform_placeholder' as a renderer.
-  $output = $view->execute_display($display_id, $args);
+  #$output = $view->execute_display($display_id, $args);
+  $output = $view->preview($display_id, $args);
   if (empty($output)) {
     return;
   }
