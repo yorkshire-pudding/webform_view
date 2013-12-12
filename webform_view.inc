@@ -219,7 +219,6 @@ function _webform_render_view($component, $value_serialized = NULL, $filter = TR
         $default_value = $component_value[$webform_component['form_key']];
       }
 
-
       // Webform components are very unlike normal form elements.
       // that's a bore. Copy some parameters like size across.
 
@@ -228,7 +227,10 @@ function _webform_render_view($component, $value_serialized = NULL, $filter = TR
       $render_func = '_webform_render_' . $webform_component['type'];
       if (function_exists($render_func)) {
         // The value arg is apparently expected to be an array? Whatever.
-        $placeholder_fields[$key][$webform_component['form_key']] = $render_func($webform_component, array($default_value));
+        if (! is_array($default_value)) {
+          $default_value = array($default_value);
+        }
+        $placeholder_fields[$key][$webform_component['form_key']] = $render_func($webform_component, $default_value);
         $placeholder_fields[$key][$webform_component['form_key']]['#webform_component'] = $webform_component;
       }
       else {
@@ -388,6 +390,17 @@ function theme_webform_view_embedded($variables) {
  */
 function theme_webform_display_view($variables) {
   $element = $variables['element'];
+
+  // May need to unpack and flatten nested arrays (multiple checkbox options).
+  foreach ($element['#value'] as $delta => $row) {
+    foreach ($row as $col => $cell) {
+      // Some fields may be  so arrive as arrays. Stringify when theming.
+      if (is_array($cell)) {
+        $element['#value'][$delta][$col] = implode(', ', $cell);
+      }
+    }
+  }
+
   // Theme the order like a table.
   if ($element['#format'] == 'html') {
     $first_row = reset($element['#value']);
@@ -409,16 +422,10 @@ function array_to_plaintext_table($rows) {
   // Count the col widths first.
   foreach ($rows as $delta => $row) {
     foreach ($row as $col => $cell) {
-      // Some fields may be multiple (checkbox options) so arrive as arrays.
-      if (is_array($cell)) {
-        $cell = implode(', ', $cell);
-        $rows[$delta][$col] = $cell;
-      }
       $cols[$col] = max(@$cols[$col], strlen($cell), strlen($col));
     }
   }
   // Now format.
-
   $lines = array();
   $printf_format = '';
   // Build the string template.
