@@ -440,23 +440,3 @@ function array_to_plaintext_table($rows) {
   return join("\n", $lines);
 }
 
-/**
- * Implements _webform_display_component().
- * @param $value this has been flattened and serialized - unpack it before use.
- */
-function _webform_display_view($component, $value_serialized, $format = 'html') {
-  $value = array();
-  if (! empty($value_serialized)) {
-    $value = unserialize(reset($value_serialized));
-  }
-  return array(
-    '#title' => $component['name'],
-    '#weight' => $component['weight'],
-    '#theme' => 'webform_display_view',
-    '#theme_wrappers' => $format == 'html' ? array('webform_element') : array('webform_element_text'),
-    '#format' => $format,
-    #'#options' => _webform_select_options($component, !$component['extra']['aslist']),
-    '#value' => (array) $value,
-    '#translatable' => array('title', 'options'),
-  );
-}
