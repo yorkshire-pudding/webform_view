@@ -367,12 +367,14 @@ function _webform_theme_view() {
 function _webform_table_view($component, $raw_value) {
   if (! empty($raw_value)) {
     $structured_value = unserialize(reset($raw_value));
+    // Set the value as a single string.
+    // As this may be highly structured, abuse CSV delimiters and cram it all
+    // together.
+    return struct_to_plaintext($structured_value);
   }
-  $output = '';
-  // Set the value as a single string.
-  // As this may be highly structured, abuse CSV delimiters and cram it all
-  // together.
-  return struct_to_plaintext($structured_value);
+  else {
+    return '';
+  }
 }
 
 
