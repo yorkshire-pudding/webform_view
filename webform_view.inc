@@ -335,16 +335,85 @@ function _webform_theme_view() {
       'render element' => 'element',
     ),
     // HTML version
-    # ARG! name collision
-    #'webform_view' => array(
-    #  'render element' => 'element',
-    #),
     // This renders the element when in the actual webform
     // needs to be named _embedded to avoid a name collision
     'webform_view_embedded' => array(
       'render element' => 'element',
     ),
 
+  );
+}
+
+/**
+ * Return the result of a component value for display in a table.
+ *
+ * Implements _webform_table_COMPONENTNAME()
+ */
+function _webform_table_view($component, $raw_value) {
+  if (! empty($raw_value)) {
+    $structured_value = unserialize(reset($raw_value));
+  }
+  $output = '';
+  // Set the value as a single string.
+  // As this may be highly structured, abuse CSV delimiters and cram it all
+  // together.
+  return struct_to_plaintext($structured_value);
+}
+
+
+/**
+ * Return the header for this component to be displayed in a CSV file.
+ *
+ * Implements _webform_csv_headers_COMPONENT()
+ *
+ * @see _webform_csv_headers_component()
+ */
+function _webform_csv_headers_view($component, $export_options) {
+  $header = array();
+  $header[0] = '';
+  $header[1] = '';
+  $header[2] = $component['name'];
+  return $header;
+}
+
+/**
+ * Format the submitted data of a component for CSV downloading.
+ *
+ * In theory, this could be used to change the number of columns in the
+ * output and re-split my fields, but nah.
+ *
+ * Implements _webform_csv_data_COMPONENT()
+ *
+ * @see _webform_csv_data_component()
+ */
+function _webform_csv_data_view($component, $export_options, $raw_value) {
+  $return = array();
+  if (! empty($raw_value)) {
+    $structured_value = unserialize(reset($raw_value));
+    $return[] = struct_to_plaintext($structured_value);
+  }
+  return $return;
+}
+
+
+/**
+ * Implements _webform_display_component().
+ * @param $value this has been flattened and serialized - unpack it before use.
+ */
+function _webform_display_view($component, $value_serialized, $format = 'html') {
+  $value = array();
+  if (! empty($value_serialized)) {
+    $value = unserialize(reset($value_serialized));
+  }
+  return array(
+    '#title' => $component['name'],
+    '#weight' => $component['weight'],
+    '#theme' => 'webform_display_view',
+    '#theme_wrappers' => $format == 'html' ? array('webform_element') : array('webform_element_text'),
+    '#format' => $format,
+    #'#options' => _webform_select_options($component, !$component['extra']['aslist']),
+    '#value' => (array) $value,
+    '#translatable' => array('title', 'options'),
   );
 }
 
@@ -440,3 +509,28 @@ function array_to_plaintext_table($rows) {
   return join("\n", $lines);
 }
 
+/**
+ * Another way to flatten data readabley
+ * @param Array $structured_value
+ */
+function struct_to_plaintext($structured_value) {
+  $output = '';
+  if (is_array($structured_value)) {
+    foreach ($structured_value as $row_id => $row) {
+      if (!empty($row)) {
+        // Need to flatten arrays maybe
+        foreach ($row as $field => $val) {
+          if (is_array($val)) {
+            $row[$field] = '(' . join('|', $val) . ')';
+          }
+        }
+        $output .= check_plain(join(', ', $row)) . '; ';
+      }
+    }
+  }
+  else {
+    // Should not get here?
+    $output = check_plain(print_r($structured_value, 1));
+  }
+  return $output;
+}
