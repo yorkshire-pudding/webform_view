@@ -24,6 +24,7 @@ function _webform_defaults_view() {
     'extra' => array(
       'view' => '',
       'filter_field_id' => 'quantity',
+      'contextual_filters' => '',
       'description' => '',
       'private' => FALSE,
     ),
@@ -79,6 +80,16 @@ function _webform_edit_view($component) {
     '#description' => t("Rows where this field is blank will be excluded from results, eg set it to the 'quantity' field to discard info when 'quantity' is zero, or set it to the 'yes' field to ignore submissions where the answer is 'no'. This prevents reports from filling up with dozens of lines with 'quantity:0' next to them. If you choose '&lt;none&gt;', then all rows will always be submitted, without any clean-up."),
   );
 
+  // Pass arguments through to the view.
+  // Use the same method as Views UI Preview does.
+  $form['webform_view']['contextual_filters'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Contextual filters'),
+    '#parents' => array('extra', 'contextual_filters'),
+    '#default_value' => $component['extra']['contextual_filters'],
+    '#description' => t('You can pass arguments through to the view. Separate contextual filter values with a "/".'),
+  );
+
   return $form;
 }
 
@@ -119,6 +130,8 @@ function _webform_render_view($component, $value_serialized = NULL, $filter = TR
 
   $node = isset($component['nid']) ? node_load($component['nid']) : NULL;
   $view_key = $component['extra']['view'];
+  $args = explode('/', $component['extra']['contextual_filters']);
+
   $placeholder_fields = array();
 
   // Nicely stolen from views_block_view()
@@ -142,7 +155,7 @@ function _webform_render_view($component, $value_serialized = NULL, $filter = TR
   // execute_display produces cooked text.
   // It can include a placeholder string for our form elements,
   // if a field chooses to use the 'webform_placeholder' as a renderer.
-  $output = $view->execute_display($display_id);
+  $output = $view->execute_display($display_id, $args);
   if (empty($output)) {
     return;
   }
