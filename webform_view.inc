@@ -1,9 +1,9 @@
 <?php
+
 /**
  * @file
  *   Additional component for webform that allows views to be used as embeddable elements.
  */
-
 
 /**
  * Implements _webform_defaults_component().
@@ -114,7 +114,6 @@ function _webform_view_options() {
   return $options;
 }
 
-
 /**
  * Show the embedded view on the webform.
  *
@@ -149,7 +148,7 @@ function _webform_render_view($component, $value_serialized = NULL, $filter = TR
     return;
   }
 
-  if (! $view->access($display_id)) {
+  if (!$view->access($display_id)) {
     watchdog('webform_view', 'View access denied - cannot embed %name %display_id', array('%name' => $name, '%display_id' => $display_id));
   }
 
@@ -189,7 +188,7 @@ function _webform_render_view($component, $value_serialized = NULL, $filter = TR
         $tokens["[$token_key]"] = $token_val;
       }
       // Handle the way field data comes back from field-based views too. Incomplete.
-      else if (is_array($token_val) && $sub_val = reset($token_val)) {
+      elseif (is_array($token_val) && $sub_val = reset($token_val)) {
         if (isset($sub_val) && isset($sub_val['raw']) && isset($sub_val['raw']['value'])) {
           $tokens["[$token_key]"] = $sub_val['raw']['value'];
         }
@@ -207,8 +206,8 @@ function _webform_render_view($component, $value_serialized = NULL, $filter = TR
         ...And then configure the view to expose this field in its layout.
         ',
         array(
-          '!component' => l($component['name'], '/node/' . $node->nid . '/webform/components/' . $component['cid'] ),
-          '!webform' => l($node->title, '/node/' . $node->nid . '/webform/components/')
+          '!component' => l($component['name'], '/node/' . $node->nid . '/webform/components/' . $component['cid']),
+          '!webform' => l($node->title, '/node/' . $node->nid . '/webform/components/'),
         ), WATCHDOG_NOTICE
       );
       $component['children'] = array();
@@ -242,7 +241,7 @@ function _webform_render_view($component, $value_serialized = NULL, $filter = TR
       $render_func = '_webform_render_' . $webform_component['type'];
       if (function_exists($render_func)) {
         // The value arg is apparently expected to be an array? Whatever.
-        if (! is_array($default_value)) {
+        if (!is_array($default_value)) {
           $default_value = array($default_value);
         }
         $placeholder_fields[$key][$webform_component['form_key']] = $render_func($webform_component, $default_value);
@@ -276,11 +275,12 @@ function _webform_render_view($component, $value_serialized = NULL, $filter = TR
     '#description' => $filter ? _webform_filter_descriptions($component['extra']['description'], $node) : $component['extra']['description'],
     '#theme_wrappers' => array('webform_element'),
     '#theme' => 'webform_view_embedded',
-    '#pre_render' => array(), // Needed to disable double-wrapping of radios and checkboxes.
+    // Needed to disable double-wrapping of radios and checkboxes.
+    '#pre_render' => array(),
     '#translatable' => array('title', 'description', 'options'),
     // When webform renders elements, the content is expected to be inside
     // element #children. #markup is not respected.
-   #'#suffix' => $output,
+    #'#suffix' => $output,
     '#type' => 'markup',
   );
   // Add the made-up placeholder fields as children
@@ -300,8 +300,6 @@ function _webform_render_view($component, $value_serialized = NULL, $filter = TR
   return $element;
 }
 
-
-
 /**
  * Deal with what happens when one of our custom components is submitted.
  *
@@ -315,7 +313,8 @@ function _webform_submit_view($component, $value) {
   //  )
 
   // Can clear out blank values here.
-  $required_key = $component['extra']['filter_field_id']; // eg 'quantity';
+  // eg 'quantity';
+  $required_key = $component['extra']['filter_field_id'];
   // If this key is set, then rows without it are skipped
   $return = array();
   foreach ($value as $key => $row) {
@@ -355,7 +354,6 @@ function _webform_theme_view() {
     'webform_view_embedded' => array(
       'render element' => 'element',
     ),
-
   );
 }
 
@@ -365,7 +363,7 @@ function _webform_theme_view() {
  * Implements _webform_table_COMPONENTNAME()
  */
 function _webform_table_view($component, $raw_value) {
-  if (! empty($raw_value)) {
+  if (!empty($raw_value)) {
     $structured_value = unserialize(reset($raw_value));
     // Set the value as a single string.
     // As this may be highly structured, abuse CSV delimiters and cram it all
@@ -376,7 +374,6 @@ function _webform_table_view($component, $raw_value) {
     return '';
   }
 }
-
 
 /**
  * Return the header for this component to be displayed in a CSV file.
@@ -405,21 +402,21 @@ function _webform_csv_headers_view($component, $export_options) {
  */
 function _webform_csv_data_view($component, $export_options, $raw_value) {
   $return = array();
-  if (! empty($raw_value)) {
+  if (!empty($raw_value)) {
     $structured_value = unserialize(reset($raw_value));
     $return[] = struct_to_plaintext($structured_value);
   }
   return $return;
 }
 
-
 /**
  * Implements _webform_display_component().
+ *
  * @param $value this has been flattened and serialized - unpack it before use.
  */
 function _webform_display_view($component, $value_serialized, $format = 'html') {
   $value = array();
-  if (! empty($value_serialized)) {
+  if (!empty($value_serialized)) {
     $value = unserialize(reset($value_serialized));
   }
   return array(
@@ -467,7 +464,6 @@ function theme_webform_view_embedded($variables) {
   return $element['view']['#markup'];
 }
 
-
 /**
  * Format the output of data for this component.
  *
@@ -501,6 +497,7 @@ function theme_webform_display_view($variables) {
 
 /**
  * Rendering function to emulate table layout.
+ *
  * @param array $rows
  */
 function array_to_plaintext_table($rows) {
@@ -528,6 +525,7 @@ function array_to_plaintext_table($rows) {
 
 /**
  * Another way to flatten data readabley
+ *
  * @param Array $structured_value
  */
 function struct_to_plaintext($structured_value) {
@@ -551,3 +549,4 @@ function struct_to_plaintext($structured_value) {
   }
   return $output;
 }
+

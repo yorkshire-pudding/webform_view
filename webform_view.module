@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @file
  *   Allows views to be embedded in webforms and used as submission data sources.
@@ -63,6 +64,7 @@ function webform_view_theme() {
  * Return help text describing this module
  *
  * @param $section string Context this help is being called from
+ *
  * @return string
  */
 function webform_view_help($path, $arg) {
@@ -76,7 +78,6 @@ function webform_view_help($path, $arg) {
   }
   return FALSE;
 }
-
 
 /**
  * hook_form_alter()
@@ -96,7 +97,6 @@ function webform_view_form_alter(&$form, $form_state, $form_id) {
   }
 
   #dpm(get_defined_vars());
-
 }
 
 /**
@@ -151,7 +151,6 @@ function webform_view_field_formatter_view($entity_type, $entity, $field, $insta
   }
   return $element;
 }
-
 
 /**
  * Respond to the loading of Webform submissions.
