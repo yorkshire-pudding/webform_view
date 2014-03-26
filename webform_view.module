@@ -1,8 +1,7 @@
 <?php
-
 /**
  * @file
- *   Allows views to be embedded in webforms and used as submission data sources.
+ * Allows views to be embedded in webforms and used as submission data.
  *
  *
  * This does NOT save all that data in a fully webform-compatible way for
@@ -22,7 +21,6 @@
  *
  * The placeholder on each node in the view will be replaced with a webform
  * submission field.
- *
  */
 
 /**
@@ -38,7 +36,7 @@ function webform_view_webform_component_info() {
       'file' => 'webform_view.inc',
       'features' => array(
         'default_value' => FALSE,
-        // Support nested fields here
+        // Support nested fields here.
         'group' => TRUE,
       ),
     ),
@@ -48,9 +46,11 @@ function webform_view_webform_component_info() {
 }
 
 /**
- * Declare our custom theme - used to catch the rendering of an embedded view at the end.
+ * Declare our custom theme.
  *
- * hook_theme()
+ * Catch the rendering of an embedded view at the end.
+ *
+ * Implements hook_theme().
  */
 function webform_view_theme() {
   return array(
@@ -61,11 +61,7 @@ function webform_view_theme() {
 }
 
 /**
- * Return help text describing this module
- *
- * @param $section string Context this help is being called from
- *
- * @return string
+ * Implements hook_help().
  */
 function webform_view_help($path, $arg) {
   $modulename = 'webform_view';
@@ -80,8 +76,11 @@ function webform_view_help($path, $arg) {
 }
 
 /**
- * hook_form_alter()
+ * Adjusts a webform_client_form.
  *
+ * Calculates the unique key which is required later.
+ *
+ * Implements hook_form_alter().
  */
 function webform_view_form_alter(&$form, $form_state, $form_id) {
   if (substr($form_id, 0, 19) != 'webform_client_form') {
@@ -95,17 +94,19 @@ function webform_view_form_alter(&$form, $form_state, $form_id) {
       $form_key[] = 'webform-component-' . $form['#node']->webform['components'][$cid]['form_key'];
     }
   }
-
-  #dpm(get_defined_vars());
 }
 
 /**
+ * A special formatter to use as a placeholder to insert our view into a form.
+ *
  * By declaring an alternative field formatter - to be used in place of the
  * 'can order' flag, we can insert form elements into the view display
  * and therefore into the webform.
  *
  * Field used on the content type must be a Boolean.
  * If so, then we can replace that item with a custom display renderer.
+ *
+ * Implements hook_field_formatter_info().
  */
 function webform_view_field_formatter_info() {
   return array(
@@ -118,10 +119,12 @@ function webform_view_field_formatter_info() {
 
 /**
  * Insert a PLACEHOLDER value as the text rendering of an item.
+ *
  * The webform postprocess should replace this placeholder with the form element
- * @see theme_webform_view_embedded()
  *
  * Implements hook_field_formatter_view().
+ *
+ * @see theme_webform_view_embedded()
  */
 function webform_view_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
   $element = array();
@@ -157,11 +160,10 @@ function webform_view_field_formatter_view($entity_type, $entity, $field, $insta
  *
  * Unpack our data so it can be retrieved and displayed in reports.
  *
- * @param $submissions
+ * @param array $submissions
  *   An array of Webform submissions that are being loaded, keyed by the
  *   submission ID. Modifications to the submissions are done by reference.
  */
 function webform_view_webform_submission_load(&$submissions) {
   // Unused - this is too high-level
 }
-

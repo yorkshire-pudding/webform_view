@@ -1,17 +1,17 @@
 <?php
-
 /**
  * @file
- *   Additional component for webform that allows views to be used as embeddable elements.
+ * Additional component for webform that allows views to be used as
+ * embeddable elements.
  */
 
 /**
  * Implements _webform_defaults_component().
  *
- * @see _webform_select_view()
- *
- * Define the extra params we wish to save as settings for webform embedded view.
+ * Define the extra params to save as settings for webform embedded view.
  * Specifically - the view ID.
+ *
+ * @see _webform_select_view()
  */
 function _webform_defaults_view() {
   return array(
@@ -32,7 +32,7 @@ function _webform_defaults_view() {
 }
 
 /**
- * Presents the view options when editing a webform view component
+ * Presents the view options when editing a webform view component.
  *
  * Allows an editor to select which view to pull in and embed.
  *
@@ -94,7 +94,7 @@ function _webform_edit_view($component) {
 }
 
 /**
- * Load Webform view options - a list of available views
+ * Load Webform view options - a list of available views.
  */
 function _webform_view_options() {
   static $options;
@@ -106,7 +106,7 @@ function _webform_view_options() {
       foreach ($view->display as $display_id => $display) {
         // Create a key here, identical to that used by views_block for 'delta'
         $key = $view_id . '-' . $display_id;
-        $options[$view->human_name][$key] = (object)array('option' => array($key => $display->display_title));
+        $options[$view->human_name][$key] = (object) array('option' => array($key => $display->display_title));
       }
     }
     drupal_alter('webform_view_options', $options);
@@ -117,10 +117,10 @@ function _webform_view_options() {
 /**
  * Show the embedded view on the webform.
  *
- * Implements _webform_render_component().
+ * The returned renderable array representing the element to be themed
+ * may include form elements & nesting.
  *
- * @return a render array representing the element to be themed.
- * May include form elements & nesting.
+ * Implements _webform_render_component().
  */
 function _webform_render_view($component, $value_serialized = NULL, $filter = TRUE) {
   if (!empty($value_serialized) && is_array($value_serialized)) {
@@ -138,14 +138,14 @@ function _webform_render_view($component, $value_serialized = NULL, $filter = TR
   // If the delta doesn't contain valid data return nothing.
   $explode = explode('-', $view_key);
   if (count($explode) != 2) {
-    return;
+    return NULL;
   }
 
   list($name, $display_id) = $explode;
-  // Load the view
+  // Load the view.
   if (!($view = views_get_view($name))) {
     watchdog('webform_view', 'Invalid view - cannot embed %name %display_id', array('%name' => $name, '%display_id' => $display_id));
-    return;
+    return NULL;
   }
 
   if (!$view->access($display_id)) {
@@ -155,17 +155,16 @@ function _webform_render_view($component, $value_serialized = NULL, $filter = TR
   // execute_display produces cooked text.
   // It can include a placeholder string for our form elements,
   // if a field chooses to use the 'webform_placeholder' as a renderer.
-  #$output = $view->execute_display($display_id, $args);
   $output = $view->preview($display_id, $args);
   if (empty($output)) {
-    return;
+    return NULL;
   }
 
   // Go through the rows to prepare the webform-like fields.
   // Do this by CLONING the children elements already nested in this one.
   foreach ($view->result as $index => $row) {
 
-    // Key on the real row ID if possible
+    // Key on the real row ID if possible.
     $key = isset($row->{$view->base_field}) ? $row->{$view->base_field} : $index;
 
     // If reviewing or editing fields, the $value array may be available.
@@ -187,7 +186,8 @@ function _webform_render_view($component, $value_serialized = NULL, $filter = TR
       if (is_string($token_val)) {
         $tokens["[$token_key]"] = $token_val;
       }
-      // Handle the way field data comes back from field-based views too. Incomplete.
+      // Handle the way field data comes back from field-based views too.
+      // TODO: Incomplete.
       elseif (is_array($token_val) && $sub_val = reset($token_val)) {
         if (isset($sub_val) && isset($sub_val['raw']) && isset($sub_val['raw']['value'])) {
           $tokens["[$token_key]"] = $sub_val['raw']['value'];
@@ -213,7 +213,7 @@ function _webform_render_view($component, $value_serialized = NULL, $filter = TR
       $component['children'] = array();
     }
 
-    foreach ((array)$component['children'] as $webform_component) {
+    foreach ((array) $component['children'] as $webform_component) {
 
       // Some webform welements are not native. @see webform_element_info
       $type = $webform_component['type'];
@@ -248,27 +248,29 @@ function _webform_render_view($component, $value_serialized = NULL, $filter = TR
         $placeholder_fields[$key][$webform_component['form_key']]['#webform_component'] = $webform_component;
       }
       else {
+        /*
         //////SNIP THIS
         // This was me doing it by hand - probably redundant if ^ is working.
         $placeholder_fields[$key][$webform_component['form_key']] = array(
           '#type' => $type,
           '#title' => $webform_component['name'],
-          '#size' => isset($webform_component['extra']['width']) ? $webform_component['extra']['width'] : NULL,
+          '#size' => isset($webform_component['extra']['width'])
+            ? $webform_component['extra']['width'] : NULL,
           '#default_value' => isset($default_value) ? $default_value : NULL,
           '#webform_component' => $webform_component,
-          // Need to call in the theme wrapper to get field markup and title to show.
-          '#theme_wrappers' => ($type == 'hidden') ? array() : array('webform_element'),
+          // Need to call in the theme wrapper to get field markup
+          // and title to show.
+          '#theme_wrappers' => ($type == 'hidden')
+            ? array() : array('webform_element'),
         );
         /////
+        */
       }
     }
   }
 
-  #  dpm(get_defined_vars());
-
-  $display = $view->display[$view->current_display];
+  // $display = $view->display[$view->current_display];
   $element = array(
-    #'#title' => $display->display_title,
     '#title_display' => $component['extra']['title_display'] ? $component['extra']['title_display'] : 'before',
     '#required' => $component['mandatory'],
     '#weight' => $component['weight'],
@@ -280,10 +282,9 @@ function _webform_render_view($component, $value_serialized = NULL, $filter = TR
     '#translatable' => array('title', 'description', 'options'),
     // When webform renders elements, the content is expected to be inside
     // element #children. #markup is not respected.
-    #'#suffix' => $output,
     '#type' => 'markup',
   );
-  // Add the made-up placeholder fields as children
+  // Add the made-up placeholder fields as children.
   $element += $placeholder_fields;
 
   // Add our embedded view as a renderable.
@@ -291,8 +292,6 @@ function _webform_render_view($component, $value_serialized = NULL, $filter = TR
   // it will still show up. Normally however, this value gets caught and
   // preprocessed in theme_webform_view_embedded()
   $element['view']['#markup'] = $output;
-
-  #dpm(get_defined_vars());
 
   // Don't do this until we are finished with the data.
   // $view->destroy();
@@ -309,13 +308,13 @@ function _webform_submit_view($component, $value) {
   // $value is an array, should contain indexed clusters of information
   // one for each row.
   // eg array(
-  //   51 => array('item' => 'the node title', 'quantity' => 2)
-  //  )
+  // 51 => array('item' => 'the node title', 'quantity' => 2)
+  // )
 
   // Can clear out blank values here.
   // eg 'quantity';
   $required_key = $component['extra']['filter_field_id'];
-  // If this key is set, then rows without it are skipped
+  // If this key is set, then rows without it are skipped.
   $return = array();
   foreach ($value as $key => $row) {
     if (is_array($row)) {
@@ -344,13 +343,13 @@ function _webform_theme_view() {
   // Declares different theme func for on-screen and text-output of the results.
   // Note, not the form  element.
   return array(
-    // Text version
+    // Text version.
     'webform_display_view' => array(
       'render element' => 'element',
     ),
-    // HTML version
+    // HTML version.
     // This renders the element when in the actual webform
-    // needs to be named _embedded to avoid a name collision
+    // needs to be named _embedded to avoid a name collision.
     'webform_view_embedded' => array(
       'render element' => 'element',
     ),
@@ -412,7 +411,8 @@ function _webform_csv_data_view($component, $export_options, $raw_value) {
 /**
  * Implements _webform_display_component().
  *
- * @param $value this has been flattened and serialized - unpack it before use.
+ * The $value available here has been flattened and serialized
+ * - unpack it before use.
  */
 function _webform_display_view($component, $value_serialized, $format = 'html') {
   $value = array();
@@ -425,7 +425,6 @@ function _webform_display_view($component, $value_serialized, $format = 'html') 
     '#theme' => 'webform_display_view',
     '#theme_wrappers' => $format == 'html' ? array('webform_element') : array('webform_element_text'),
     '#format' => $format,
-    #'#options' => _webform_select_options($component, !$component['extra']['aslist']),
     '#value' => (array) $value,
     '#translatable' => array('title', 'options'),
   );
@@ -433,6 +432,7 @@ function _webform_display_view($component, $value_serialized, $format = 'html') 
 
 /**
  * Render the embedded view element in the form.
+ *
  * Most content has now been prepared and the child items rendered.
  * My job is to MOVE the rendered form element markup and embed it into the
  * view displays where the placeholders are.
@@ -442,18 +442,20 @@ function theme_webform_view_embedded($variables) {
   // The rendered, already-built view is text in $element['view']['#markup'].
   // The form elements are my direct children.
 
-  // Build an array of replacements for str_replace efficiency
+  // Build an array of replacements for str_replace efficiency.
   $replacements = array();
   foreach (element_children($element) as $key) {
     $replace_pattern = "[webform_view_" . $key . "_placeholder]";
     // Child item has already been rendered/built by now. (#printed is true)
-    // Copy its processed text in here
+    // Copy its processed text in here.
     if (!empty($element[$key]['#printed'])) {
       $rendered_child = $element[$key]['#children'];
     }
     else {
-      // Dunno why, but maybe I should render i myself. Used to be required, maybe this should never happen.
+      // Dunno why, but maybe I should render i myself.
+      // Used to be required, maybe this should never happen.
       $rendered_child = drupal_render($element[$key]);
+      // TODO: check if this code is still reachable.
     }
     $replacements[$replace_pattern] = $rendered_child;
   }
@@ -499,6 +501,10 @@ function theme_webform_display_view($variables) {
  * Rendering function to emulate table layout.
  *
  * @param array $rows
+ *   Structured data. A two-dimensional array.
+ *
+ * @return string
+ *   HTML rendering of the input.
  */
 function array_to_plaintext_table($rows) {
   $cols = array();
@@ -520,26 +526,30 @@ function array_to_plaintext_table($rows) {
   foreach ($rows as $row) {
     $lines[] = call_user_func_array('sprintf', array('format' => $printf_format) + $row);
   }
-  return join("\n", $lines);
+  return implode("\n", $lines);
 }
 
 /**
- * Another way to flatten data readabley
+ * Another way to flatten data readabley.
  *
- * @param Array $structured_value
+ * @param array $structured_value
+ *   Probably an array.
+ *
+ * @return string
+ *   Slightly formatted version of the input.
  */
 function struct_to_plaintext($structured_value) {
   $output = '';
   if (is_array($structured_value)) {
     foreach ($structured_value as $row_id => $row) {
       if (!empty($row)) {
-        // Need to flatten arrays maybe
+        // Need to flatten arrays maybe.
         foreach ($row as $field => $val) {
           if (is_array($val)) {
-            $row[$field] = '(' . join('|', $val) . ')';
+            $row[$field] = '(' . implode('|', $val) . ')';
           }
         }
-        $output .= check_plain(join(', ', $row)) . '; ';
+        $output .= check_plain(implode(', ', $row)) . '; ';
       }
     }
   }
@@ -549,4 +559,3 @@ function struct_to_plaintext($structured_value) {
   }
   return $output;
 }
-
