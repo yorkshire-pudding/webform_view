@@ -27,6 +27,7 @@ function _webform_defaults_view() {
       'contextual_filters' => '',
       'description' => '',
       'private' => FALSE,
+      'title_display' => 0,
     ),
   );
 }
