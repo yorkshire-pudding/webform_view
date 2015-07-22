@@ -414,11 +414,33 @@ function _webform_csv_data_view($component, $export_options, $raw_value) {
  * The $value available here has been flattened and serialized
  * - unpack it before use.
  */
-function _webform_display_view($component, $value_serialized, $format = 'html') {
+function _webform_display_view($component, $value_serialized, $format = 'html', $sid = NULL) {
   $value = array();
-  if (!empty($value_serialized)) {
-    $value = unserialize(reset($value_serialized));
+  if ($sid !== NULL) {
+    // Looking at an already submitted form,
+    // we need to get some more data from the database.
+    $node = node_load($component['nid']);
+    $sub = webform_get_submission($component['nid'], $sid);
+    foreach ($sub->data as $key => $val) {
+      // Only add non-component data.
+      if (!in_array($key, array_keys($node->webform['components']))) {
+        $item = node_load($key);
+
+        foreach ($val as $k => $v) {
+          $val[$k] = token_replace($v, array('node' => $item));
+        }
+        $value[] = $val;
+      }
+    }
   }
+  else {
+    foreach ($component['children'] as $key => $val) {
+      if (!isset($val['nid'])) {
+        $value[] = unserialize($val['value']);
+      }
+    }
+  }
+
   return array(
     '#title' => $component['name'],
     '#weight' => $component['weight'],

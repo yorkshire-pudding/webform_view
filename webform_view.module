@@ -36,8 +36,13 @@ function webform_view_webform_component_info() {
       'file' => 'webform_view.inc',
       'features' => array(
         'default_value' => FALSE,
-        // Support nested fields here.
+        'required' => FALSE,
+        'description' => FALSE,
+        'conditional' => FALSE,
         'group' => TRUE,
+        'title_inline' => FALSE,
+        'css_classes' => FALSE,
+        'wrapper_classes' => FALSE,
       ),
     ),
   );
@@ -80,18 +85,57 @@ function webform_view_help($path, $arg) {
  *
  * Calculates the unique key which is required later.
  *
- * Implements hook_form_alter().
+ * Implements hook_form_FORM_ID_alter().
  */
-function webform_view_form_alter(&$form, $form_state, $form_id) {
-  if (substr($form_id, 0, 19) != 'webform_client_form') {
-    return;
-  }
-  // Find form_key from cid.
-  $form_key = array();
-  $settings = variable_get('webform_view_' . $form['#node']->nid, array());
-  foreach ($settings as $cid => $enabled) {
-    if (is_int($cid) && $enabled) {
-      $form_key[] = 'webform-component-' . $form['#node']->webform['components'][$cid]['form_key'];
+function webform_view_form_webform_client_form_alter(&$form, $form_state, $form_id) {
+  $component_tree = $form_state['webform']['component_tree'];
+  foreach ($component_tree['children'] as $cid => $component) {
+    if ($component['type'] == 'view') {
+      // Current component is a webform_view
+      $form_key = $component['form_key'];
+      $items = array();
+      $first_field = NULL;
+
+      $inputs = $form_state['input']['submitted'];
+      if (is_array($inputs[$form_key])) {
+        foreach ($inputs[$form_key] as $nid => $values) {
+          if (is_numeric($nid)) {
+            // Iterate each node in the view.
+            $node = node_load($nid);
+
+            $val = array();
+            // Flatten the embedded view values.
+            if (is_array($component['children'])) {
+              foreach ($component['children'] as $key => $field) {
+                // If value was submitted, use it, else use default.
+                $v = (isset($values[$field['form_key']])) ? $values[$field['form_key']] : $field['value'];
+
+                $val[$field['form_key']] = token_replace($v, array('node' => $node));
+
+                if ($first_field === NULL) {
+                  // Discover which was the first field defined.
+                  $first_field = $field['form_key'];
+                }
+              }
+            }
+            // This data structure enables the proper display
+            // of the embedded view inputs on preview
+            // and also stores the data in the webform_submitted_data table.
+            $form['#node']->webform['components'][$nid] = array(
+              'cid' => $nid,
+              'pid' => $component['cid'],
+              'form_key' => $nid,
+              'value' => serialize($val),
+            );
+
+            $items[] = implode(', ', $val);
+          }
+        }
+      }
+      // This stores a nice, text version to show in table view or CSV export.
+      if ($first_field !== NULL) {
+        $form['submitted'][$form_key][$first_field]['#value'] = implode("\n", $items);
+      }
     }
   }
 }
