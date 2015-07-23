@@ -91,7 +91,7 @@ function webform_view_form_webform_client_form_alter(&$form, $form_state, $form_
   // Only process if there is submitted input.
   if (empty($form_state['input'])) {
     return;
-  }
+ }
   $component_tree = $form_state['webform']['component_tree'];
   foreach ($component_tree['children'] as $cid => $component) {
     if ($component['type'] == 'view') {
@@ -135,6 +135,8 @@ function webform_view_form_webform_client_form_alter(&$form, $form_state, $form_
                 'pid' => $component['cid'],
                 'form_key' => $nid,
                 'value' => serialize($val),
+                // Save the serialized blob as text.
+                'type' => 'text',
               );
 
               $items[] = implode(', ', $val);
