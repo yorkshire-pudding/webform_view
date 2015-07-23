@@ -88,10 +88,6 @@ function webform_view_help($path, $arg) {
  * Implements hook_form_FORM_ID_alter().
  */
 function webform_view_form_webform_client_form_alter(&$form, $form_state, $form_id) {
-  // Only process if there is submitted input.
-  if (empty($form_state['input'])) {
-    return;
- }
   $component_tree = $form_state['webform']['component_tree'];
   foreach ($component_tree['children'] as $cid => $component) {
     if ($component['type'] == 'view') {
