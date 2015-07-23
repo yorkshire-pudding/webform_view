@@ -414,29 +414,22 @@ function _webform_csv_data_view($component, $export_options, $raw_value) {
  * The $value available here has been flattened and serialized
  * - unpack it before use.
  */
-function _webform_display_view($component, $value_serialized, $format = 'html', $sid = NULL) {
+function _webform_display_view($component, $value_serialized, $format = 'html', $submission = array()) {
   $value = array();
-  if ($sid !== NULL) {
-    // Looking at an already submitted form,
-    // we need to get some more data from the database.
+  if (!empty($submission)) {
     $node = node_load($component['nid']);
-    $sub = webform_get_submission($component['nid'], $sid);
-    foreach ($sub->data as $key => $val) {
+    $components = $node->webform['components'];
+    foreach ($submission->data as $key => $val) {
       // Only add non-component data.
-      if (!in_array($key, array_keys($node->webform['components']))) {
+      // In results, webform_view components will not be in the list, but
+      // during preview it's necessary to further check if nid is present
+      if (!(isset($components[$key]) && isset($components[$key]['nid']))) {
         $item = node_load($key);
 
         foreach ($val as $k => $v) {
           $val[$k] = token_replace($v, array('node' => $item));
         }
         $value[] = $val;
-      }
-    }
-  }
-  else {
-    foreach ($component['children'] as $key => $val) {
-      if (!isset($val['nid'])) {
-        $value[] = unserialize($val['value']);
       }
     }
   }

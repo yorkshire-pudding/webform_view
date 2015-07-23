@@ -96,6 +96,10 @@ function webform_view_form_webform_client_form_alter(&$form, $form_state, $form_
       $items = array();
       $first_field = NULL;
 
+      // Can clear out blank values here.
+      // eg 'quantity';
+      $required_key = $component['extra']['filter_field_id'];
+
       $inputs = $form_state['input']['submitted'];
       if (is_array($inputs[$form_key])) {
         foreach ($inputs[$form_key] as $nid => $values) {
@@ -118,22 +122,24 @@ function webform_view_form_webform_client_form_alter(&$form, $form_state, $form_
                 }
               }
             }
-            // This data structure enables the proper display
-            // of the embedded view inputs on preview
-            // and also stores the data in the webform_submitted_data table.
-            $form['#node']->webform['components'][$nid] = array(
-              'cid' => $nid,
-              'pid' => $component['cid'],
-              'form_key' => $nid,
-              'value' => serialize($val),
-            );
+            // If required key is set, then rows without it are skipped.
+            if (($required_key == '<none>') || !empty($val[$required_key])) {
+              // This data structure enables the proper storage of the data in
+              // the webform_submitted_data table.
+              $form['#node']->webform['components'][$nid] = array(
+                'cid' => $nid,
+                'pid' => $component['cid'],
+                'form_key' => $nid,
+                'value' => serialize($val),
+              );
 
-            $items[] = implode(', ', $val);
+              $items[] = implode(', ', $val);
+            }
           }
         }
       }
       // This stores a nice, text version to show in table view or CSV export.
-      if ($first_field !== NULL) {
+      if (($first_field !== NULL) && !empty($items)) {
         $form['submitted'][$form_key][$first_field]['#value'] = implode("\n", $items);
       }
     }

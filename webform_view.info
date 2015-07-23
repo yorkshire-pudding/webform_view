@@ -1,8 +1,8 @@
 name = Webform View
 description = Allow webform submissions to have views embedded
 core = 7.x
-dependencies[] = webform
-dependencies[] = views
+dependencies[] = webform (>=7.x-4.10)
+dependencies[] = views (7.x-3.x)
 
 package = "Webform"
 
