@@ -85,13 +85,17 @@ function webform_view_help($path, $arg) {
  *
  * Calculates the unique key which is required later.
  *
- * Implements hook_form_FORM_ID_alter().
+ * Implements hook_form_BASE_FORM_ID_alter().
  */
-function webform_view_form_webform_client_form_alter(&$form, $form_state, $form_id) {
+function webform_view_form_webform_client_form_alter(&$form, &$form_state, $form_id) {
+  // Only process if there is submitted input.
+  if (empty($form_state['input']) || empty($form_state['input']['submitted'])) {
+    return;
+  }
   $component_tree = $form_state['webform']['component_tree'];
   foreach ($component_tree['children'] as $cid => $component) {
     if ($component['type'] == 'view') {
-      // Current component is a webform_view
+      // Current component is a webform_view.
       $form_key = $component['form_key'];
       $val = array();
       $first_field = NULL;
@@ -144,6 +148,10 @@ function webform_view_form_webform_client_form_alter(&$form, $form_state, $form_
  * Form API #validate handler for the webform_client_form() form.
  */
 function webform_view_form_validate($form, &$form_state) {
+  if ($form_state['webform']['preview'] && $form_state['webform']['page_count'] === $form_state['webform']['page_num']) {
+    // Form has already passed validation and is on the preview page.
+    return;
+  }
   $component_tree = $form_state['webform']['component_tree'];
   foreach ($component_tree['children'] as $cid => $component) {
     if ($component['type'] == 'view') {
