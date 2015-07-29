@@ -27,7 +27,6 @@ function _webform_defaults_view() {
       'contextual_filters' => '',
       'description' => '',
       'private' => FALSE,
-      'title_display' => 0,
     ),
   );
 }
@@ -301,38 +300,6 @@ function _webform_render_view($component, $value_serialized = NULL, $filter = TR
 }
 
 /**
- * Deal with what happens when one of our custom components is submitted.
- *
- * Implements _webform_submit_component().
- */
-function _webform_submit_view($component, $value) {
-  // $value is an array, should contain indexed clusters of information
-  // one for each row.
-  // eg array(
-  // 51 => array('item' => 'the node title', 'quantity' => 2)
-  // )
-
-  // Can clear out blank values here.
-  // eg 'quantity';
-  $required_key = $component['extra']['filter_field_id'];
-  // If this key is set, then rows without it are skipped.
-  $return = array();
-  foreach ($value as $key => $row) {
-    if (is_array($row)) {
-      if (($required_key == '<none>') || !empty($row[$required_key])) {
-        $return[$key] = $row;
-      }
-    }
-  }
-
-  // Webform internals just can't deal with nested arrays, so at this point we
-  // have to hide our data in serialized form. Dull, but the only way to be
-  // safe it seems.
-
-  return serialize($return);
-}
-
-/**
  * Declare rendering routines for our element.
  *
  * Called by webform to register theme functions that the individual
@@ -358,58 +325,6 @@ function _webform_theme_view() {
 }
 
 /**
- * Return the result of a component value for display in a table.
- *
- * Implements _webform_table_COMPONENTNAME()
- */
-function _webform_table_view($component, $raw_value) {
-  if (!empty($raw_value)) {
-    $structured_value = unserialize(reset($raw_value));
-    // Set the value as a single string.
-    // As this may be highly structured, abuse CSV delimiters and cram it all
-    // together.
-    return struct_to_plaintext($structured_value);
-  }
-  else {
-    return '';
-  }
-}
-
-/**
- * Return the header for this component to be displayed in a CSV file.
- *
- * Implements _webform_csv_headers_COMPONENT()
- *
- * @see _webform_csv_headers_component()
- */
-function _webform_csv_headers_view($component, $export_options) {
-  $header = array();
-  $header[0] = '';
-  $header[1] = '';
-  $header[2] = $component['name'];
-  return $header;
-}
-
-/**
- * Format the submitted data of a component for CSV downloading.
- *
- * In theory, this could be used to change the number of columns in the
- * output and re-split my fields, but nah.
- *
- * Implements _webform_csv_data_COMPONENT()
- *
- * @see _webform_csv_data_component()
- */
-function _webform_csv_data_view($component, $export_options, $raw_value) {
-  $return = array();
-  if (!empty($raw_value)) {
-    $structured_value = unserialize(reset($raw_value));
-    $return[] = struct_to_plaintext($structured_value);
-  }
-  return $return;
-}
-
-/**
  * Implements _webform_display_component().
  *
  * The $value available here has been flattened and serialized
@@ -418,19 +333,11 @@ function _webform_csv_data_view($component, $export_options, $raw_value) {
 function _webform_display_view($component, $value_serialized, $format = 'html', $submission = array()) {
   $value = array();
   if (!empty($submission)) {
-    $node = node_load($component['nid']);
-    $components = $node->webform['components'];
-    foreach ($submission->data as $key => $val) {
-      // Only add non-component data.
-      // In results, webform_view components will not be in the list, but
-      // during preview it's necessary to further check if nid is present
-      if (!(isset($components[$key]) && isset($components[$key]['nid']))) {
-        $item = node_load($key);
-
-        foreach ($val as $k => $v) {
-          $val[$k] = token_replace($v, array('node' => $item));
-        }
-        $value[] = $val;
+    foreach ($component['children'] as $cid => $field) {
+      if ($field['type'] == 'hidden') {
+        // Data is stored in the first hidden field
+        $value = unserialize($submission->data[$cid][0]);
+        break;
       }
     }
   }
@@ -504,7 +411,12 @@ function theme_webform_display_view($variables) {
   // Theme the order like a table.
   if ($element['#format'] == 'html') {
     $first_row = reset($element['#value']);
-    $header = $first_row ? array_keys($first_row) : array();
+    $header = array();
+    if ($first_row) {
+      foreach ($first_row as $key => $val) {
+        $header[] = t($element[$key]['#title']);
+      }
+    }
     return theme('table', array('header' => $header, 'rows' => $element['#value']));
   }
   // Plaintext equivalent.
@@ -543,35 +455,4 @@ function array_to_plaintext_table($rows) {
     $lines[] = call_user_func_array('sprintf', array('format' => $printf_format) + $row);
   }
   return implode("\n", $lines);
-}
-
-/**
- * Another way to flatten data readabley.
- *
- * @param array $structured_value
- *   Probably an array.
- *
- * @return string
- *   Slightly formatted version of the input.
- */
-function struct_to_plaintext($structured_value) {
-  $output = '';
-  if (is_array($structured_value)) {
-    foreach ($structured_value as $row_id => $row) {
-      if (!empty($row)) {
-        // Need to flatten arrays maybe.
-        foreach ($row as $field => $val) {
-          if (is_array($val)) {
-            $row[$field] = '(' . implode('|', $val) . ')';
-          }
-        }
-        $output .= check_plain(implode(', ', $row)) . '; ';
-      }
-    }
-  }
-  else {
-    // Should not get here?
-    $output = check_plain(print_r($structured_value, 1));
-  }
-  return $output;
 }

@@ -36,7 +36,7 @@ function webform_view_webform_component_info() {
       'file' => 'webform_view.inc',
       'features' => array(
         'default_value' => FALSE,
-        'required' => FALSE,
+        'required' => TRUE,
         'description' => FALSE,
         'conditional' => FALSE,
         'group' => TRUE,
@@ -91,9 +91,9 @@ function webform_view_form_webform_client_form_alter(&$form, $form_state, $form_
   $component_tree = $form_state['webform']['component_tree'];
   foreach ($component_tree['children'] as $cid => $component) {
     if ($component['type'] == 'view') {
-      // Current component is a webform_view.
+      // Current component is a webform_view
       $form_key = $component['form_key'];
-      $items = array();
+      $val = array();
       $first_field = NULL;
 
       // Can clear out blank values here.
@@ -107,42 +107,73 @@ function webform_view_form_webform_client_form_alter(&$form, $form_state, $form_
             // Iterate each node in the view.
             $node = node_load($nid);
 
-            $val = array();
             // Flatten the embedded view values.
             if (is_array($component['children'])) {
               foreach ($component['children'] as $key => $field) {
                 // If value was submitted, use it, else use default.
                 $v = (isset($values[$field['form_key']])) ? $values[$field['form_key']] : $field['value'];
+                $val[$nid][$field['form_key']] = token_replace($v, array('node' => $node));
 
-                $val[$field['form_key']] = token_replace($v, array('node' => $node));
-
-                if ($first_field === NULL) {
-                  // Discover which was the first field defined.
+                // Discover which was the first hidden field defined.
+                if (($first_field === NULL) && ($field['type'] == 'hidden')) {
                   $first_field = $field['form_key'];
                 }
               }
             }
-            // If required key is set, then rows without it are skipped.
-            if (($required_key == '<none>') || !empty($val[$required_key])) {
-              // This data structure enables the proper storage of the data in
-              // the webform_submitted_data table.
-              $form['#node']->webform['components'][$nid] = array(
-                'cid' => $nid,
-                'pid' => $component['cid'],
-                'form_key' => $nid,
-                'value' => serialize($val),
-                // Save the serialized blob as text.
-                'type' => 'text',
-              );
-
-              $items[] = implode(', ', $val);
-            }
           }
         }
       }
-      // This stores a nice, text version to show in table view or CSV export.
-      if (($first_field !== NULL) && !empty($items)) {
-        $form['submitted'][$form_key][$first_field]['#value'] = implode("\n", $items);
+      // This stores the submitted data in serialized format in the first
+      // hidden field.
+      if ($first_field !== NULL) {
+        // If required key is set, then rows without it are skipped.
+        foreach ($val as $nid => $v) {
+          if (($required_key != '<none>')  && empty($v[$required_key])) {
+            unset($val[$nid]);
+          }
+        }
+        $form['submitted'][$form_key][$first_field]['#value'] = serialize($val);
+      }
+    }
+  }
+  // Add custom validation
+  $form['#validate'][] = 'webform_view_form_validate';
+}
+
+/**
+ * Form API #validate handler for the webform_client_form() form.
+ */
+function webform_view_form_validate($form, &$form_state) {
+  $component_tree = $form_state['webform']['component_tree'];
+  foreach ($component_tree['children'] as $cid => $component) {
+    if ($component['type'] == 'view') {
+      // Current component is a webform_view.
+      $form_key = $component['form_key'];
+
+      // If the required field is set, verify that at least one of the values
+      // is defined, and display an error if not
+      $required_key = $component['extra']['filter_field_id'];
+      if (($required_key != '<none>') && ($component['required'])) {
+        $ok = FALSE;
+        $inputs = $form_state['input']['submitted'];
+        if (is_array($inputs[$form_key])) {
+          foreach ($inputs[$form_key] as $nid => $values) {
+            if ((is_array($values)) && (!empty($values[$required_key]))) {
+              $ok = TRUE;
+              break;
+            }
+          }
+        }
+        if (!$ok) {
+          // Search for the right field in order to provide a nice name to the
+          // user in the validation failure message
+          foreach ($component['children'] as $ch_cid => $ch_component) {
+            if ($ch_component['form_key'] == $required_key) {
+              form_set_error('submitted][' . $form_key, t('!name field is required.', array('!name' => $ch_component['name'])));
+              break;
+            }
+          }
+        }
       }
     }
   }
@@ -208,14 +239,44 @@ function webform_view_field_formatter_view($entity_type, $entity, $field, $insta
 }
 
 /**
- * Respond to the loading of Webform submissions.
- *
- * Unpack our data so it can be retrieved and displayed in reports.
- *
- * @param array $submissions
- *   An array of Webform submissions that are being loaded, keyed by the
- *   submission ID. Modifications to the submissions are done by reference.
+ * Implements hook_webform_csv_header_alter().
  */
-function webform_view_webform_submission_load(&$submissions) {
-  // Unused - this is too high-level
+function webform_view_webform_csv_header_alter(&$header, $component) {
+  $node = node_load($component['nid']);
+  if ($component['type'] == 'view') {
+    // This component is a webform_view, use name as header
+    $header[2] = t($component['name']);
+  } else {
+    // Current component parent is a webform_view, hide headers
+    if ($node->webform['components'][$component['pid']]['type'] == 'view') {
+      $header[2] = NULL;
+    }
+  }
+}
+
+/**
+ * Implements hook_webform_csv_data_alter().
+ */
+function webform_view_webform_csv_data_alter(&$data, $component, $submission) {
+  $node = node_load($component['nid']);
+  if ($component['type'] == 'view') {
+    // This component is a webform_view
+    foreach ($node->webform['components'] as $cid => $comp) {
+      // Get the data from the first hidden field that is a child of this one
+      // and display each field separated with colon, and each item with a bar
+      if (($comp['pid'] == $component['cid']) && ($comp['type'] == 'hidden')) {
+        $values = array();
+        foreach (unserialize($submission->data[$cid][0]) as $val) {
+          $values[] = implode(':', $val);
+        }
+        $data = implode('|', $values);
+        break;
+      }
+    }
+  } else {
+    // Current component parent is a webform_view, hide any data
+    if ($node->webform['components'][$component['pid']]['type'] == 'view') {
+      $data = NULL;
+    }
+  }
 }
